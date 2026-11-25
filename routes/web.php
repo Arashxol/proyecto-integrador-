@@ -99,4 +99,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/citas/{id}/estado', [\App\Http\Controllers\CitaController::class, 'actualizarEstado'])->name('citas.estado');
     });
 
+    // Plataforma QA – Automatización de pruebas
+    Route::middleware([CheckRol::class . ':Administrador,Bioquimico,Recepcionista'])->group(function () {
+        Route::get('/qa', [\App\Http\Controllers\QATestController::class, 'index'])->name('qa.index');
+        Route::post('/qa/ejecutar', [\App\Http\Controllers\QATestController::class, 'ejecutar'])->name('qa.ejecutar');
+    });
+
 });

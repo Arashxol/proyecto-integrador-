@@ -1,41 +1,15 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registro de Paciente - DIALAB</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<style>
-.area-card { border-left: 4px solid; cursor: pointer; transition: .2s; }
-.area-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
-.area-card.selected { border-width: 4px; }
-.analisis-item { display: flex; align-items: center; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: .15s; }
-.analisis-item:hover { background: #f1f5f9; }
-.analisis-item input { margin-right: 10px; }
-.badge-precio { background: #dcfce7; color: #166534; }
-</style>
-</head>
-<body class="bg-light">
+@extends('layouts.app')
+@section('title','Registro de Paciente - DIALAB')
+@section('top_title','Registrar Paciente')
+@section('top_subtitle','Admisión de pacientes y selección de análisis')
 
-<nav class="navbar navbar-dark bg-dark">
-<div class="container-fluid">
-<span class="navbar-brand">🧑‍⚕️ Registro de Paciente - DIALAB</span>
-<div class="d-flex gap-2 align-items-center">
-<a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-light">Dashboard</a>
-<form action="{{ route('logout') }}" method="POST" class="d-inline">@csrf<button class="btn btn-sm btn-outline-danger">Salir</button></form>
-</div>
-</div>
-</nav>
-
-<div class="container mt-4">
-@if(session('success'))<div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
-@if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>@endif
+@section('content')
+@if(session('success'))<div class="alert alert-success alert-dismissible fade show shadow-sm">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
+@if($errors->any())<div class="alert alert-danger shadow-sm"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>@endif
 
 <form action="{{ route('pacientes.guardar') }}" method="POST" id="formPaciente">
 @csrf
 <div class="row g-4">
-<!-- Columna izquierda: Datos del paciente -->
 <div class="col-lg-5">
 <div class="card shadow-sm mb-3">
 <div class="card-header bg-white fw-semibold"><i class="bi bi-person"></i> Datos del Paciente</div>
@@ -53,7 +27,6 @@
 </div>
 </div>
 
-<!-- Columna derecha: Análisis por área -->
 <div class="col-lg-7">
 <div class="card shadow-sm mb-3">
 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -61,7 +34,7 @@
 <span class="badge bg-primary" id="contador">0 seleccionados</span>
 </div>
 <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-@foreach($categorias as $categoria => $analisis)
+@foreach(($categorias ?? []) as $categoria => $analisis)
 <div class="area-card card mb-2 p-2" style="border-color: {{ $loop->iteration % 2 == 0 ? '#3b82f6' : '#10b981' }};">
 <div class="d-flex align-items-center px-2 py-1" onclick="toggleArea(this)">
 <i class="bi bi-chevron-down me-2"></i>
@@ -82,7 +55,7 @@
 </div>
 </div>
 <div class="card shadow-sm border-success">
-<div class="card-body d-flex justify-content-between align-center">
+<div class="card-body d-flex justify-content-between align-items-center">
 <div><strong>Total estimado:</strong> <span class="badge bg-success fs-6" id="totalPrecio">Bs. 0.00</span></div>
 <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-check2-circle"></i> Registrar Paciente y Generar Orden</button>
 </div>
@@ -90,14 +63,21 @@
 </div>
 </div>
 </form>
-</div>
 
-<div id="ciAlert" class="alert alert-warning alert-dismissible fade show d-none position-fixed" style="top: 70px; right: 20px; z-index: 1050; max-width: 350px;">
+<div id="ciAlert" class="alert alert-warning alert-dismissible fade show d-none position-fixed" style="top: 80px; right: 20px; z-index: 1050; max-width: 350px;">
 <strong>⚠️ CI Existente:</strong> <span id="ciAlertMsg"></span>
 <button type="button" class="btn-close" onclick="document.getElementById('ciAlert').classList.add('d-none')"></button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+.area-card { cursor: pointer; transition: .2s; }
+.area-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.analisis-item { display: flex; align-items: center; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: .15s; }
+.analisis-item:hover { background: #f1f5f9; }
+.analisis-item input { margin-right: 10px; }
+.badge-precio { background: #dcfce7; color: #166534; }
+</style>
+
 <script>
 function toggleArea(el) {
   const body = el.nextElementSibling;
@@ -105,11 +85,8 @@ function toggleArea(el) {
   el.querySelector('i').classList.toggle('bi-chevron-down');
   el.querySelector('i').classList.toggle('bi-chevron-up');
 }
-// Abrir todas las áreas
 document.querySelectorAll('.area-body').forEach(b => b.style.display = 'block');
 document.querySelectorAll('.area-card > div:first-child i').forEach(i => { i.classList.remove('bi-chevron-down'); i.classList.add('bi-chevron-up'); });
-
-// Contador y total
 function actualizarTotal() {
   const checkboxes = document.querySelectorAll('input[name="examenes[]"]:checked');
   document.getElementById('contador').textContent = checkboxes.length + ' seleccionados';
@@ -121,33 +98,18 @@ function actualizarTotal() {
   document.getElementById('totalPrecio').textContent = 'Bs. ' + total.toFixed(2);
 }
 document.querySelectorAll('input[name="examenes[]"]').forEach(cb => cb.addEventListener('change', actualizarTotal));
-
-// Verificar CI duplicado
 function checkCi(ci) {
   if (!ci || ci.length < 4) return;
   fetch("{{ url('/pacientes/check') }}/" + ci)
     .then(r => r.json())
     .then(data => {
-      const a = document.getElementById('ciAlert');
-      const m = document.getElementById('ciAlertMsg');
-      const f = document.getElementById('ciFeedback');
-      const i = document.getElementById('ciInput');
+      const a = document.getElementById('ciAlert'), m = document.getElementById('ciAlertMsg'), f = document.getElementById('ciFeedback'), i = document.getElementById('ciInput');
       if (data.existe) {
-        a.classList.remove('d-none');
-        m.textContent = data.paciente.nombre_completo + ' ya registrado. Se reutilizará.';
-        f.textContent = '⚠️ Existe: ' + data.paciente.nombre_completo;
-        f.className = 'form-text text-warning fw-bold';
-        if (!sessionStorage.getItem('ciWarn_' + ci)) {
-          alert('⚠️ CI Duplicado\nCI ' + ci + ' ya existe: ' + data.paciente.nombre_completo + '\nSe reutilizará el paciente.');
-          sessionStorage.setItem('ciWarn_' + ci, '1');
-        }
-      } else {
-        a.classList.add('d-none');
-        f.textContent = '✓ Disponible';
-        f.className = 'form-text text-success';
-      }
+        a.classList.remove('d-none'); m.textContent = data.paciente.nombre_completo + ' ya registrado. Se reutilizará.';
+        f.textContent = '⚠️ Existe: ' + data.paciente.nombre_completo; f.className = 'form-text text-warning fw-bold';
+        if (!sessionStorage.getItem('ciWarn_' + ci)) { alert('⚠️ CI Duplicado\nCI ' + ci + ' ya existe: ' + data.paciente.nombre_completo); sessionStorage.setItem('ciWarn_' + ci, '1'); }
+      } else { a.classList.add('d-none'); f.textContent = '✓ Disponible'; f.className = 'form-text text-success'; }
     }).catch(() => {});
 }
 </script>
-</body>
-</html>
+@endsection

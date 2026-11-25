@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // $middleware->alias(['rol' => \App\Http\Middleware\CheckRol::class]);
 
+        $middleware->alias([
+            'rol' => \App\Http\Middleware\CheckRol::class,
+        ]);
+
+        $middleware->validateCsrfTokens(['/qa/ejecutar']);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

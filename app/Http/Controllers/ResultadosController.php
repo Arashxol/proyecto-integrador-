@@ -6,6 +6,7 @@ use App\Models\Resultado;
 use App\Models\Paciente;
 use App\Libraries\PDFGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Inertia;
 use Illuminate\Support\Carbon;
 
 class ResultadosController extends Controller
@@ -54,7 +55,7 @@ class ResultadosController extends Controller
         $rechazados = Resultado::where('estado', 'Rechazado')->count();
         $pacientes = Paciente::orderBy('nombre_completo')->get(['id', 'nombre_completo', 'ci']);
 
-        return view('resultados.index', compact('resultados', 'total', 'validados', 'pendientes', 'rechazados', 'pacientes'));
+        return Inertia::render('Resultados/Index', compact('resultados', 'total', 'validados', 'pendientes', 'rechazados', 'pacientes'));
     }
 
     public function paciente($id)
@@ -81,7 +82,7 @@ class ResultadosController extends Controller
             return $key;
         });
 
-        return view('resultados.paciente', compact('paciente', 'resultados', 'grupos'));
+        return Inertia::render('Resultados/Paciente', compact('paciente', 'resultados', 'grupos'));
     }
 
     public function exportar($id)

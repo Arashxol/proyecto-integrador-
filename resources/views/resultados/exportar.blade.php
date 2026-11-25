@@ -1,8 +1,10 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Resultados - {{ $paciente->nombre_completo }}</title>
+@extends('layouts.app')
+@section('title','Resultados - {{ $paciente->nombre_completo }}')
+@section('top_title','Resultados')
+@section('top_subtitle','Documento de resultados')
+
+@section('content')
+<div class="page">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -398,5 +400,4 @@ tbody tr:hover { background: #fafbfc; }
     </div>
 
 </div>
-</body>
-</html>
+@endsection

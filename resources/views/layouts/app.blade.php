@@ -88,6 +88,13 @@ body{ background:#f1f3f6; font-family: system-ui, -apple-system, Segoe UI, Robot
   <a href="{{ route('dashboard') }}#resultados" class="nav-link"><i class="bi bi-file-earmark-medical"></i> Mis Resultados</a>
   @endif
 
+  @if(in_array(auth()->user()->rol, ['Administrador','Bioquimico']))
+  <div class="nav-section">QA & Testing</div>
+  <a href="{{ route('qa.index') }}" class="nav-link {{ request()->routeIs('qa.*') ? 'active' : '' }}">
+    <i class="bi bi-bug"></i> Test Runner
+  </a>
+  @endif
+
   <div class="sidebar-footer">
     <div class="d-flex align-items-center gap-2">
       <div class="rounded-circle bg-white text-dark d-grid" style="width:36px;height:36px;place-items:center;font-weight:700">{{ strtoupper(substr(auth()->user()->name,0,1)) }}</div>

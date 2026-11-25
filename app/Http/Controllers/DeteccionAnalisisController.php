@@ -9,6 +9,7 @@ use App\Models\TipoAnalisis;
 use App\Models\OrdenAnalisis;
 use App\Models\AuditoriaLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Inertia;
 use Illuminate\Support\Carbon;
 
 class DeteccionAnalisisController extends Controller

@@ -10,9 +10,12 @@ use App\Models\Pago;
 use App\Models\AuditoriaLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Inertia;
 
-class DashboardController extends Controller {
-    public function index() {
+class DashboardController extends Controller
+{
+    public function index(Request $request)
+    {
         $user = Auth::user();
 
         // 1. Lógica para Administrador (vista completa)
@@ -28,16 +31,26 @@ class DashboardController extends Controller {
             $ordenes = OrdenAnalisis::with('paciente')->latest()->take(5)->get();
             $logs = AuditoriaLog::with('user')->latest()->take(5)->get();
             $examenesDisponibles = TipoAnalisis::where('activo', true)->get();
-            $queryBusqueda = request('buscar_paciente');
+            $queryBusqueda = $request->query('buscar_paciente');
             $pacienteBuscado = null;
             $historialOrdenes = collect();
             if ($queryBusqueda) {
-                $pacienteBuscado = Paciente::where('ci', $queryBusqueda)->orWhere('nombre_completo', 'LIKE', "%{$queryBusqueda}%")->first();
+                $pacienteBuscado = Paciente::where('ci', $queryBusqueda)
+                    ->orWhere('nombre_completo', 'LIKE', "%{$queryBusqueda}%")
+                    ->first();
                 if ($pacienteBuscado) {
-                    $historialOrdenes = OrdenAnalisis::with(['muestras.tipoAnalisis', 'muestras.resultado', 'pago'])->where('paciente_id', $pacienteBuscado->id)->latest()->get();
+                    $historialOrdenes = OrdenAnalisis::with(['muestras.tipoAnalisis', 'muestras.resultado', 'pago'])
+                        ->where('paciente_id', $pacienteBuscado->id)
+                        ->latest()
+                        ->get();
                 }
             }
-            return view('dashboards.admin', compact('stats', 'usuarios', 'ordenes', 'logs', 'examenesDisponibles', 'queryBusqueda', 'pacienteBuscado', 'historialOrdenes'));
+
+            return view('dashboard', compact(
+                'stats', 'usuarios', 'ordenes', 'logs',
+                'examenesDisponibles', 'queryBusqueda',
+                'pacienteBuscado', 'historialOrdenes'
+            ));
         }
 
         // 1b. Lógica para Recepción
@@ -48,17 +61,16 @@ class DashboardController extends Controller {
             $ordenes = OrdenAnalisis::with('paciente')->orderBy('id', 'desc')->take(10)->get();
             $examenesDisponibles = TipoAnalisis::where('activo', true)->get();
 
-            // --- NUEVA LÓGICA DE BÚSQUEDA DE HISTORIAL ---
-            $queryBusqueda = request('buscar_paciente');
+            // NUEVA LÓGICA DE BÚSQUEDA DE HISTORIAL
+            $queryBusqueda = $request->query('buscar_paciente');
             $pacienteBuscado = null;
             $historialOrdenes = collect();
 
             if ($queryBusqueda) {
-                // Buscamos por CI exacto o por coincidencia de nombre
                 $pacienteBuscado = Paciente::where('ci', $queryBusqueda)
-                                    ->orWhere('nombre_completo', 'LIKE', "%{$queryBusqueda}%")
-                                    ->first();
-                
+                    ->orWhere('nombre_completo', 'LIKE', "%{$queryBusqueda}%")
+                    ->first();
+
                 if ($pacienteBuscado) {
                     $historialOrdenes = OrdenAnalisis::with(['muestras.tipoAnalisis', 'muestras.resultado'])
                         ->where('paciente_id', $pacienteBuscado->id)
@@ -67,10 +79,11 @@ class DashboardController extends Controller {
                 }
             }
 
-            return view('dashboards.recepcion', compact(
-                'pacientes', 'ordenesPendientes', 'muestrasEnProceso', 'ordenes', 
-                'examenesDisponibles', 'queryBusqueda', 'pacienteBuscado', 'historialOrdenes'
-            ));
+            return view('dashboard', array_merge(compact(
+                'pacientes', 'ordenesPendientes', 'muestrasEnProceso',
+                'ordenes', 'examenesDisponibles', 'queryBusqueda',
+                'pacienteBuscado', 'historialOrdenes'
+            ), ['userRole' => 'recepcionista']));
         }
 
         // 2. Lógica para el Bioquímico
@@ -80,17 +93,18 @@ class DashboardController extends Controller {
                 ->whereIn('estado', ['Recolectado', 'En Analisis'])
                 ->orderBy('fecha_recoleccion', 'asc')
                 ->get();
-                
-            return view('dashboards.bioquimico', compact('muestrasPendientes'));
-            
+
+            return view('dashboard', array_merge(compact(
+                'muestrasPendientes'
+            ), ['userRole' => 'bioquimico']));
         }
-        
+
         // 3. Lógica para el Paciente
         if ($user->rol == 'Paciente') {
             $pacienteData = Paciente::where('email', $user->email)->first();
             $ordenes = collect();
             $citas = collect();
-            $statsPaciente = ['tomadas'=>0,'enProceso'=>0,'validadas'=>0,'total'=>0];
+            $statsPaciente = ['tomadas' => 0, 'enProceso' => 0, 'validadas' => 0, 'total' => 0];
             if ($pacienteData) {
                 $ordenes = OrdenAnalisis::with(['muestras.tipoAnalisis', 'muestras.resultado', 'pago'])
                     ->where('paciente_id', $pacienteData->id)
@@ -99,12 +113,18 @@ class DashboardController extends Controller {
                 // Estadísticas por estado de muestra
                 $todasMuestras = $ordenes->flatMap->muestras;
                 $statsPaciente['total'] = $todasMuestras->count();
-                $statsPaciente['tomadas'] = $todasMuestras->where('estado','Recolectado')->count();
-                $statsPaciente['enProceso'] = $todasMuestras->whereIn('estado',['En Transito','En Analisis'])->count();
-                $statsPaciente['validadas'] = $todasMuestras->filter(fn($m)=> $m->resultado && $m->resultado->estado==='Validado')->count();
-                $citas = \App\Models\Cita::where('paciente_id', $pacienteData->id)->orderBy('fecha','desc')->orderBy('hora','desc')->take(5)->get();
+                $statsPaciente['tomadas'] = $todasMuestras->where('estado', 'Recolectado')->count();
+                $statsPaciente['enProceso'] = $todasMuestras->whereIn('estado', ['En Transito', 'En Analisis'])->count();
+                $statsPaciente['validadas'] = $todasMuestras->filter(fn($m) => $m->resultado && $m->resultado->estado === 'Validado')->count();
+                $citas = \App\Models\Cita::where('paciente_id', $pacienteData->id)
+                    ->orderBy('fecha', 'desc')
+                    ->orderBy('hora', 'desc')
+                    ->take(5)
+                    ->get();
             }
-            return view('dashboards.paciente', compact('pacienteData', 'ordenes', 'statsPaciente', 'citas'));
+            return view('dashboard', array_merge(compact(
+                'pacienteData', 'ordenes', 'statsPaciente', 'citas'
+            ), ['userRole' => 'paciente']));
         }
 
         // Por seguridad, si el rol no coincide, cerramos sesión
